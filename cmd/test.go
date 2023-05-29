@@ -32,7 +32,7 @@ func init() {
 	rootCmd.AddCommand(testCmd)
 }
 
-type Settings struct {
+type Setting struct {
 	SourcePath     string
 	SourceFile     *os.File
 	TempTargetPath string
@@ -40,7 +40,7 @@ type Settings struct {
 }
 
 func test() {
-	settings := []Settings{}
+	settings := []Setting{}
 	sourcePath := ""
 
 	paths := []string{
@@ -52,42 +52,42 @@ func test() {
 
 	for _, pathStr := range paths {
 		sourcePath, _ = filepath.Abs(pathStr)
-		settings = append(settings, Settings{SourcePath: sourcePath})
+		settings = append(settings, Setting{SourcePath: sourcePath})
 	}
 
-	for _, thing := range settings {
-		updateSettings(thing)
+	for _, setting := range settings {
+		updateSettings(setting)
 	}
 }
 
-func updateSettings(x1 Settings) {
-	x1.TempTargetPath = filepath.Join(os.TempDir(), "nightrover_")
-	if err := createTemporaryFile(&x1); err != nil {
-		log.Printf("Error creating temporary file %s: %v\n", x1.TempTargetPath, err)
+func updateSettings(s Setting) {
+	s.TempTargetPath = filepath.Join(os.TempDir(), "nightrover_")
+	if err := createTemporaryFile(&s); err != nil {
+		log.Printf("Error creating temporary file %s: %v\n", s.TempTargetPath, err)
 		return
 	}
-	defer os.Remove(x1.TempTargetPath)
+	defer os.Remove(s.TempTargetPath)
 
 	log.Printf("Temporary file %s created to update %s\n",
-		x1.TempTargetFile.Name(),
-		x1.SourcePath,
+		s.TempTargetFile.Name(),
+		s.SourcePath,
 	)
 
-	if err := openSourceFile(&x1); err != nil {
-		log.Printf("Failed to open file %s: %v\n", x1.SourcePath, err)
+	if err := openSourceFile(&s); err != nil {
+		log.Printf("Failed to open file %s: %v\n", s.SourcePath, err)
 		return
 	}
-	defer x1.SourceFile.Close()
+	defer s.SourceFile.Close()
 
 	pattern := regexp.MustCompile(`video_3d *= *"[^"]+" ?`)
-	scanner := bufio.NewScanner(x1.SourceFile)
+	scanner := bufio.NewScanner(s.SourceFile)
 
-	if err := processLines(scanner, pattern, x1.TempTargetFile); err != nil {
+	if err := processLines(scanner, pattern, s.TempTargetFile); err != nil {
 		log.Printf("Error processing lines: %v\n", err)
 		return
 	}
 
-	if sameChecksum, err := compareChecksums(x1.TempTargetFile.Name(), x1.SourceFile.Name()); err != nil {
+	if sameChecksum, err := compareChecksums(s.TempTargetFile.Name(), s.SourceFile.Name()); err != nil {
 		log.Println("Error comparing checksums:", err)
 		return
 	} else if sameChecksum {
@@ -95,7 +95,7 @@ func updateSettings(x1 Settings) {
 		return
 	}
 
-	if err := replaceOriginalFile(x1.TempTargetFile.Name(), x1.SourceFile.Name()); err != nil {
+	if err := replaceOriginalFile(s.TempTargetFile.Name(), s.SourceFile.Name()); err != nil {
 		log.Printf("Failed to replace the original file: %v\n", err)
 		return
 	}
@@ -103,15 +103,15 @@ func updateSettings(x1 Settings) {
 	log.Println("Replacement successful!")
 }
 
-func createTemporaryFile(x1 *Settings) error {
+func createTemporaryFile(s *Setting) error {
 	var err error
-	x1.TempTargetFile, err = os.CreateTemp(filepath.Dir(x1.TempTargetPath), filepath.Base(x1.TempTargetPath))
+	s.TempTargetFile, err = os.CreateTemp(filepath.Dir(s.TempTargetPath), filepath.Base(s.TempTargetPath))
 	return err
 }
 
-func openSourceFile(x1 *Settings) error {
+func openSourceFile(s *Setting) error {
 	var err error
-	x1.SourceFile, err = os.Open(x1.SourcePath)
+	s.SourceFile, err = os.Open(s.SourcePath)
 	return err
 }
 
