@@ -30,6 +30,7 @@ to quickly create a Cobra application.`,
 
 func init() {
 	rootCmd.AddCommand(testCmd)
+	log.SetFlags(0)
 }
 
 type Setting struct {
