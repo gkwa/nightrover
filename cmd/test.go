@@ -1,6 +1,3 @@
-/*
-Copyright © 2023 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
@@ -35,7 +32,7 @@ func init() {
 	rootCmd.AddCommand(testCmd)
 }
 
-type MyThing struct {
+type Settings struct {
 	SourcePath     string
 	SourceFile     *os.File
 	TempTargetPath string
@@ -43,7 +40,7 @@ type MyThing struct {
 }
 
 func test() {
-	things := []MyThing{}
+	settings := []Settings{}
 	sourcePath := ""
 
 	paths := []string{
@@ -55,15 +52,15 @@ func test() {
 
 	for _, pathStr := range paths {
 		sourcePath, _ = filepath.Abs(pathStr)
-		things = append(things, MyThing{SourcePath: sourcePath})
+		settings = append(settings, Settings{SourcePath: sourcePath})
 	}
 
-	for _, thing := range things {
+	for _, thing := range settings {
 		updateSettings(thing)
 	}
 }
 
-func updateSettings(x1 MyThing) {
+func updateSettings(x1 Settings) {
 	x1.TempTargetPath = filepath.Join(os.TempDir(), "nightrover_")
 	if err := createTemporaryFile(&x1); err != nil {
 		log.Printf("Error creating temporary file %s: %v\n", x1.TempTargetPath, err)
@@ -106,13 +103,13 @@ func updateSettings(x1 MyThing) {
 	log.Println("Replacement successful!")
 }
 
-func createTemporaryFile(x1 *MyThing) error {
+func createTemporaryFile(x1 *Settings) error {
 	var err error
 	x1.TempTargetFile, err = os.CreateTemp(filepath.Dir(x1.TempTargetPath), filepath.Base(x1.TempTargetPath))
 	return err
 }
 
-func openSourceFile(x1 *MyThing) error {
+func openSourceFile(x1 *Settings) error {
 	var err error
 	x1.SourceFile, err = os.Open(x1.SourcePath)
 	return err
