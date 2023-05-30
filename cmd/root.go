@@ -146,10 +146,7 @@ func updateSettings(s Setting) {
 	}
 	defer os.Remove(s.TempTargetPath)
 
-	log.Debug().Msgf("Temporary file %s created to update %s\n",
-		s.TempTargetFile.Name(),
-		s.SourcePath,
-	)
+	log.Debug().Msgf("Temporary file %s created to update %s\n", s.TempTargetFile.Name(), s.SourcePath)
 
 	if err := openSourceFile(&s); err != nil {
 		log.Error().Msgf("Failed to open file %s: %v\n", s.SourcePath, err)
