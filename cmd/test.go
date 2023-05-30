@@ -5,11 +5,12 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"regexp"
 
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 )
 
@@ -23,14 +24,15 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		log.Println("test called")
+		log.Debug().Msg("test called")
 		test()
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(testCmd)
-	log.SetFlags(0)
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 }
 
 type Setting struct {
@@ -64,18 +66,18 @@ func test() {
 func updateSettings(s Setting) {
 	s.TempTargetPath = filepath.Join(os.TempDir(), "nightrover_")
 	if err := createTemporaryFile(&s); err != nil {
-		log.Printf("Error creating temporary file %s: %v\n", s.TempTargetPath, err)
+		log.Error().Msgf("Error creating temporary file %s: %v\n", s.TempTargetPath, err)
 		return
 	}
 	defer os.Remove(s.TempTargetPath)
 
-	log.Printf("Temporary file %s created to update %s\n",
+	log.Debug().Msgf("Temporary file %s created to update %s\n",
 		s.TempTargetFile.Name(),
 		s.SourcePath,
 	)
 
 	if err := openSourceFile(&s); err != nil {
-		log.Printf("Failed to open file %s: %v\n", s.SourcePath, err)
+		log.Error().Msgf("Failed to open file %s: %v\n", s.SourcePath, err)
 		return
 	}
 	defer s.SourceFile.Close()
@@ -84,24 +86,24 @@ func updateSettings(s Setting) {
 	scanner := bufio.NewScanner(s.SourceFile)
 
 	if err := processLines(scanner, pattern, s.TempTargetFile); err != nil {
-		log.Printf("Error processing lines: %v\n", err)
+		log.Error().Msgf("Error processing lines: %v\n", err)
 		return
 	}
 
 	if sameChecksum, err := compareChecksums(s.TempTargetFile.Name(), s.SourceFile.Name()); err != nil {
-		log.Println("Error comparing checksums:", err)
+		log.Debug().Msgf("Error comparing checksums: %v", err)
 		return
 	} else if sameChecksum {
-		log.Println("The files have the same checksum, no changes made.")
+		log.Debug().Msg("The files have the same checksum, no changes made.")
 		return
 	}
 
 	if err := replaceOriginalFile(s.TempTargetFile.Name(), s.SourceFile.Name()); err != nil {
-		log.Printf("Failed to replace the original file: %v\n", err)
+		log.Error().Msgf("Failed to replace the original file: %v\n", err)
 		return
 	}
 
-	log.Println("Replacement successful!")
+	log.Info().Msgf("%s updated", s.SourcePath)
 }
 
 func createTemporaryFile(s *Setting) error {
