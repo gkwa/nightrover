@@ -170,7 +170,7 @@ func updateSettings(s Setting) {
 		return
 	}
 
-	if err := replaceOriginalFile(s.TempTargetFile.Name(), s.SourceFile.Name()); err != nil {
+	if err := replaceOriginalFile(s.TempTargetFile, s.SourceFile); err != nil {
 		log.Error().Msgf("Failed to replace the original file: %v\n", err)
 		return
 	}
@@ -236,6 +236,8 @@ func compareSums(sum1, sum2 []byte) bool {
 	return fmt.Sprintf("%x", sum1) == fmt.Sprintf("%x", sum2)
 }
 
-func replaceOriginalFile(tempTargetFile, sourceFile string) error {
-	return os.Rename(tempTargetFile, sourceFile)
+func replaceOriginalFile(tempTargetFile, sourceFile *os.File) error {
+	tempTargetFile.Close()
+	sourceFile.Close()
+	return os.Rename(tempTargetFile.Name(), sourceFile.Name())
 }
