@@ -40,7 +40,7 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().String("log-level",
-		"info", "Log level (trace, debug, info, warn, error, fatal, panic)",
+		"info", "Log level (debug, info, warn, error, fatal, panic)",
 	)
 
 	consoleWriter := zerolog.ConsoleWriter{
@@ -51,9 +51,12 @@ func init() {
 		FormatLevel: func(i interface{}) string {
 			return strings.ToUpper(fmt.Sprintf("[%s]", i))
 		},
+		FormatCaller: func(i interface{}) string {
+			return filepath.Base(fmt.Sprintf("%s", i))
+		},
 	}
 
-	log.Logger = log.Output(consoleWriter)
+	log.Logger = log.Output(consoleWriter).With().Caller().Logger()
 }
 
 func initConfig() {
@@ -94,6 +97,8 @@ func setupLogging() {
 		zerolog.SetGlobalLevel(zerolog.FatalLevel)
 	case "panic":
 		zerolog.SetGlobalLevel(zerolog.PanicLevel)
+	case "info":
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	default:
 		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	}
@@ -164,7 +169,7 @@ func updateSettings(s Setting) {
 		log.Debug().Msgf("Error comparing checksums: %v", err)
 		return
 	} else if sameChecksum {
-		log.Debug().Msg("The files have the same checksum, no changes made.")
+		log.Info().Msgf("%s is already updated", s.SourceFile.Name())
 		return
 	}
 
