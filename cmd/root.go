@@ -144,7 +144,11 @@ func updateSettings(s Setting) {
 		log.Error().Msgf("Error creating temporary file %s: %v\n", s.TempTargetPath, err)
 		return
 	}
-	defer os.Remove(s.TempTargetPath)
+	defer func() {
+		s.TempTargetFile.Close()
+		log.Debug().Msgf("deleting tempfile %s\n", s.TempTargetFile.Name())
+		os.Remove(s.TempTargetFile.Name())
+	}()
 
 	log.Debug().Msgf("Temporary file %s created to update %s\n", s.TempTargetFile.Name(), s.SourcePath)
 
@@ -170,6 +174,9 @@ func updateSettings(s Setting) {
 		return
 	}
 
+	s.TempTargetFile.Close()
+	s.SourceFile.Close()
+
 	if err := replaceOriginalFile(s.TempTargetFile, s.SourceFile); err != nil {
 		log.Error().Msgf("Failed to replace the original file: %v\n", err)
 		return
@@ -181,6 +188,7 @@ func updateSettings(s Setting) {
 func createTemporaryFile(s *Setting) error {
 	var err error
 	s.TempTargetFile, err = os.CreateTemp(filepath.Dir(s.TempTargetPath), filepath.Base(s.TempTargetPath))
+	log.Debug().Msgf("creating tempfile %s", s.TempTargetFile.Name())
 	return err
 }
 
@@ -237,7 +245,5 @@ func compareSums(sum1, sum2 []byte) bool {
 }
 
 func replaceOriginalFile(tempTargetFile, sourceFile *os.File) error {
-	tempTargetFile.Close()
-	sourceFile.Close()
 	return os.Rename(tempTargetFile.Name(), sourceFile.Name())
 }
