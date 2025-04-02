@@ -2,7 +2,7 @@ module github.com/taylormonacelli/nightrover
 
 go 1.21.0
 
-toolchain go1.24.1
+toolchain go1.24.2
 
 require (
 	github.com/rs/zerolog v1.34.0
